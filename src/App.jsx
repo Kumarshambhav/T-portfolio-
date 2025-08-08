@@ -1,27 +1,10 @@
-/*
-WorldsBestPortfolio.jsx
-Complete React + Tailwind + Framer Motion + @react-three/fiber portfolio component
-Features added in this version:
- - Full 3D scene showing *skill icons* as distinct 3D meshes (no external models required)
- - Each skill appears as a floating, interactive 3D icon with an HTML label
- - Icons respond to hover (scale) and rotate using useFrame
- - Distinct visual themes for Light and Dark mode (scene colors, materials)
- - All sections present: Hero, Projects, Experience, Education, Skills, Contact
- - Theme toggle persists to localStorage
-
-Install (if not already):
-npm install react react-dom framer-motion clsx three @react-three/fiber @react-three/drei
-
-Drop this file into src/components/WorldsBestPortfolio.jsx and import into your App.
-*/
-
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Float, Html, Text } from "@react-three/drei";
 import { motion } from "framer-motion";
 import clsx from "clsx";
 
-// ---------- Data (from PDF) ----------
+
 const DATA = {
   name: "Shambhav Kumar Rao",
   title: "MERN developer | AI developer | GenAi",
@@ -77,12 +60,11 @@ const DATA = {
   ]
 };
 
-// ---------- 3D Skill Icon component ----------
+
 function SkillIcon({ skill, position = [0, 0, 0], isDark }) {
   const ref = useRef();
   const hoverRef = useRef(false);
 
-  // simple bobbing + rotation animation
   useFrame((state, delta) => {
     if (!ref.current) return;
     ref.current.rotation.y += delta * 0.6;
@@ -94,7 +76,7 @@ function SkillIcon({ skill, position = [0, 0, 0], isDark }) {
   const commonMat = useMemo(() => ({ metalness: 0.4, roughness: 0.25 }), []);
 
   const color = isDark ? skill.color : skill.color;
-  // geometry selection
+ 
   let geometry = null;
   switch (skill.type) {
     case "torus":
@@ -132,7 +114,7 @@ function SkillIcon({ skill, position = [0, 0, 0], isDark }) {
         <meshStandardMaterial color={color} {...commonMat} />
       </mesh>
 
-      {/* HTML label that faces camera */}
+
       <Html distanceFactor={6} className="pointer-events-none">
         <div className={clsx("whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium shadow-md", isDark ? "bg-white/8 text-white" : "bg-black/6 text-black")}>
           {skill.name}
@@ -142,9 +124,8 @@ function SkillIcon({ skill, position = [0, 0, 0], isDark }) {
   );
 }
 
-// ---------- Full 3D Scene with skill icons ----------
 function SkillsScene({ isDark }) {
-  // positions arranged in a semicircle
+ 
   const baseY = 0;
   const positions = [
     [-2.2, baseY, 0],
@@ -163,7 +144,7 @@ function SkillsScene({ isDark }) {
       <directionalLight position={[5, 5, 5]} intensity={isDark ? 1.0 : 0.8} />
       <directionalLight position={[-5, -3, -5]} intensity={0.35} />
 
-      {/* subtle floor reflection using a large, low-opacity plane */}
+    
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.6, 0]}>
         <planeGeometry args={[20, 20]} />
         <meshStandardMaterial color={isDark ? "#0b1220" : "#ffffff"} metalness={0.1} roughness={1} transparent opacity={0.6} />
@@ -180,7 +161,7 @@ function SkillsScene({ isDark }) {
   );
 }
 
-// ---------- UI small components ----------
+
 function Tag({ children }) {
   return (
     <span className="px-2 py-1 rounded-full text-xs bg-white/8 dark:bg-black/20 backdrop-blur-sm">{children}</span>
@@ -192,13 +173,13 @@ const sectionVariant = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
 };
 
-// ---------- Main component ----------
+
 export default function WorldsBestPortfolio() {
   const [isDark, setIsDark] = useState(() => {
     try {
       return localStorage.getItem("theme") === "dark";
     } catch (e) {
-      return true; // default dark
+      return true; 
     }
   });
 
@@ -225,7 +206,7 @@ export default function WorldsBestPortfolio() {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 pt-28 pb-24">
-        {/* HERO */}
+      
         <section className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
           <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7 }}>
             <div className="rounded-2xl p-8 bg-white/60 dark:bg-black/40 backdrop-blur-sm shadow-lg">
@@ -255,7 +236,7 @@ export default function WorldsBestPortfolio() {
           </motion.div>
         </section>
 
-        {/* PROJECTS */}
+      
         <motion.section variants={sectionVariant} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mt-16">
           <h2 className="text-2xl font-bold">Projects</h2>
           <div className="mt-6 grid gap-6 md:grid-cols-2">
@@ -272,7 +253,7 @@ export default function WorldsBestPortfolio() {
           </div>
         </motion.section>
 
-        {/* EXPERIENCE & EDUCATION */}
+      
         <div className="mt-16 grid md:grid-cols-2 gap-8">
           <motion.section variants={sectionVariant} initial="hidden" whileInView="visible" viewport={{ once: true }}>
             <h2 className="text-2xl font-bold">Experience</h2>
@@ -304,7 +285,7 @@ export default function WorldsBestPortfolio() {
           </motion.section>
         </div>
 
-        {/* SKILLS - static fallback list */}
+     
         <motion.section variants={sectionVariant} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mt-16">
           <h2 className="text-2xl font-bold">Skills</h2>
           <div className="mt-4 flex flex-wrap gap-3">
@@ -312,7 +293,7 @@ export default function WorldsBestPortfolio() {
           </div>
         </motion.section>
 
-        {/* CONTACT */}
+      
         <motion.section variants={sectionVariant} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mt-16">
           <h2 className="text-2xl font-bold">Contact</h2>
           <div className="mt-6 rounded-2xl p-6 bg-white/60 dark:bg-black/30 backdrop-blur-md shadow-md">
