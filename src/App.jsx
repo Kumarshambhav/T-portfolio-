@@ -36,10 +36,10 @@ const DATA = {
     { id: "react", name: "React", type: "torus", color: "#61dafb" },
     { id: "node", name: "Node.js", type: "box", color: "#68a063" },
     { id: "python", name: "Python", type: "sphere", color: "#3776ab" },
-    { id: "js", name: "JavaScript", type: "icosa", color: "#f7df1e" },
+    { id: "LangChain", name: "LangChain", type: "icosa", color: "#f7df1c" },
     { id: "mongo", name: "MongoDB", type: "cylinder", color: "#4db33d" },
     { id: "tailwind", name: "Tailwind", type: "plane", color: "#06b6d4" },
-   { id: "LangChain", name: "LangChain", type: "icosa", color: "#f7df1c" },
+   
   ],
   projects: [
     {
