@@ -39,6 +39,7 @@ const DATA = {
     { id: "js", name: "JavaScript", type: "icosa", color: "#f7df1e" },
     { id: "mongo", name: "MongoDB", type: "cylinder", color: "#4db33d" },
     { id: "tailwind", name: "Tailwind", type: "plane", color: "#06b6d4" },
+   { id: "LangChain", name: "icosa", type: "plane", color: "#06b6d4" },
   ],
   projects: [
     {
