@@ -1,45 +1,27 @@
 /*
 WorldsBestPortfolio.jsx
-A single-file React + Tailwind + Framer Motion + @react-three/fiber portfolio template
-Instructions:
-1. Create a Vite React project (recommended) or Next.js app.
-2. Install dependencies:
-   npm install react react-dom framer-motion clsx three @react-three/fiber @react-three/drei
-   (Also set up Tailwind CSS per tailwind docs)
-3. Drop this file into src/components/WorldsBestPortfolio.jsx and import it in App.jsx
-4. Tailwind and dark mode must be enabled in tailwind.config.js (class strategy).
+Complete React + Tailwind + Framer Motion + @react-three/fiber portfolio component
+Features added in this version:
+ - Full 3D scene showing *skill icons* as distinct 3D meshes (no external models required)
+ - Each skill appears as a floating, interactive 3D icon with an HTML label
+ - Icons respond to hover (scale) and rotate using useFrame
+ - Distinct visual themes for Light and Dark mode (scene colors, materials)
+ - All sections present: Hero, Projects, Experience, Education, Skills, Contact
+ - Theme toggle persists to localStorage
 
-This component is pre-filled with the information from the uploaded PDF (Shambhav Kumar Rao).
-It includes:
- - Hero with 3D scene (react-three/fiber)
- - Scroll-triggered animations using Framer Motion
- - Section reveal on scroll
- - Projects / Experience / Skills / Contact
- - Light & Dark mode toggle with persistent preference
- - Clean responsive UI using Tailwind
+Install (if not already):
+npm install react react-dom framer-motion clsx three @react-three/fiber @react-three/drei
 
-Note: tweak assets (images, links) and project details to your liking.
+Drop this file into src/components/WorldsBestPortfolio.jsx and import into your App.
 */
 
-import React, { useEffect, useState } from "react";
-import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Html, useGLTF, Float } from "@react-three/drei";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { OrbitControls, Float, Html, Text } from "@react-three/drei";
 import { motion } from "framer-motion";
 import clsx from "clsx";
 
-// ---------- 3D Model (simple shader-safe geometry) ----------
-function FloatingMesh() {
-  return (
-    <Float speed={2} rotationIntensity={1} floatIntensity={2}>
-      <mesh castShadow receiveShadow scale={1.2}>
-        <icosahedronGeometry args={[1.6, 2]} />
-        <meshStandardMaterial metalness={0.6} roughness={0.2} envMapIntensity={0.8} />
-      </mesh>
-    </Float>
-  );
-}
-
-// ---------- Data from PDF (populated) ----------
+// ---------- Data (from PDF) ----------
 const DATA = {
   name: "Shambhav Kumar Rao",
   title: "MERN developer | AI developer | GenAi",
@@ -51,11 +33,12 @@ const DATA = {
   summary:
     "I’m a dedicated and creative developer with strong skills in C++, Python, and JavaScript, and hands-on experience in full-stack development using the MERN stack. I’ve developed multiple web applications, used AI tools for code quality, and built IoT & ML projects.",
   skills: [
-    "MERN (MongoDB, Express.js, React.js, Node.js)",
-    "GenAI, LangChain, FastAPI, Conversational AI",
-    "Python, C++, JavaScript, SQL, HTML, CSS",
-    "Tailwind CSS, JWT, WebSockets, Firebase",
-    "Git, GitHub, VS Code, Figma (Basic)"
+    { id: "react", name: "React", type: "torus", color: "#61dafb" },
+    { id: "node", name: "Node.js", type: "box", color: "#68a063" },
+    { id: "python", name: "Python", type: "sphere", color: "#3776ab" },
+    { id: "js", name: "JavaScript", type: "icosa", color: "#f7df1e" },
+    { id: "mongo", name: "MongoDB", type: "cylinder", color: "#4db33d" },
+    { id: "tailwind", name: "Tailwind", type: "plane", color: "#06b6d4" },
   ],
   projects: [
     {
@@ -93,12 +76,113 @@ const DATA = {
   ]
 };
 
-// ---------- Reusable small components ----------
+// ---------- 3D Skill Icon component ----------
+function SkillIcon({ skill, position = [0, 0, 0], isDark }) {
+  const ref = useRef();
+  const hoverRef = useRef(false);
+
+  // simple bobbing + rotation animation
+  useFrame((state, delta) => {
+    if (!ref.current) return;
+    ref.current.rotation.y += delta * 0.6;
+    ref.current.position.y = position[1] + Math.sin(state.clock.getElapsedTime() + position[0]) * 0.12;
+    const targetScale = hoverRef.current ? 1.25 : 1;
+    ref.current.scale.lerp({ x: targetScale, y: targetScale, z: targetScale }, 0.1);
+  });
+
+  const commonMat = useMemo(() => ({ metalness: 0.4, roughness: 0.25 }), []);
+
+  const color = isDark ? skill.color : skill.color;
+  // geometry selection
+  let geometry = null;
+  switch (skill.type) {
+    case "torus":
+      geometry = <torusGeometry args={[0.6, 0.18, 16, 60]} />;
+      break;
+    case "box":
+      geometry = <boxGeometry args={[1.1, 1.1, 1.1]} />;
+      break;
+    case "sphere":
+      geometry = <sphereGeometry args={[0.75, 32, 32]} />;
+      break;
+    case "icosa":
+      geometry = <icosahedronGeometry args={[0.9, 1]} />;
+      break;
+    case "cylinder":
+      geometry = <cylinderGeometry args={[0.5, 0.5, 1.2, 32]} />;
+      break;
+    case "plane":
+      geometry = <planeGeometry args={[1.2, 0.7]} />;
+      break;
+    default:
+      geometry = <sphereGeometry args={[0.6, 24, 24]} />;
+  }
+
+  return (
+    <group position={position}>
+      <mesh
+        ref={ref}
+        onPointerOver={() => (hoverRef.current = true)}
+        onPointerOut={() => (hoverRef.current = false)}
+        castShadow
+        receiveShadow
+      >
+        {geometry}
+        <meshStandardMaterial color={color} {...commonMat} />
+      </mesh>
+
+      {/* HTML label that faces camera */}
+      <Html distanceFactor={6} className="pointer-events-none">
+        <div className={clsx("whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium shadow-md", isDark ? "bg-white/8 text-white" : "bg-black/6 text-black")}>
+          {skill.name}
+        </div>
+      </Html>
+    </group>
+  );
+}
+
+// ---------- Full 3D Scene with skill icons ----------
+function SkillsScene({ isDark }) {
+  // positions arranged in a semicircle
+  const baseY = 0;
+  const positions = [
+    [-2.2, baseY, 0],
+    [-1, baseY + 0.2, -0.6],
+    [0, baseY - 0.1, 0],
+    [1, baseY + 0.15, -0.4],
+    [2.2, baseY, 0],
+    [0, baseY + 0.9, 1.4]
+  ];
+
+  return (
+    <>
+      <color attach="background" args={[isDark ? "#05060a" : "#f5f7fa"]} />
+
+      <ambientLight intensity={isDark ? 0.6 : 0.9} />
+      <directionalLight position={[5, 5, 5]} intensity={isDark ? 1.0 : 0.8} />
+      <directionalLight position={[-5, -3, -5]} intensity={0.35} />
+
+      {/* subtle floor reflection using a large, low-opacity plane */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.6, 0]}>
+        <planeGeometry args={[20, 20]} />
+        <meshStandardMaterial color={isDark ? "#0b1220" : "#ffffff"} metalness={0.1} roughness={1} transparent opacity={0.6} />
+      </mesh>
+
+      <Float floatIntensity={1.2} rotationIntensity={0.7} speed={1}>
+        {DATA.skills.map((s, i) => (
+          <SkillIcon key={s.id} skill={s} position={positions[i] || [i - 2, 0, 0]} isDark={isDark} />
+        ))}
+      </Float>
+
+      <OrbitControls enablePan={false} enableZoom={false} autoRotate autoRotateSpeed={0.6} />
+    </>
+  );
+}
+
+// ---------- UI small components ----------
 function Tag({ children }) {
   return (
-    <span className="px-2 py-1 rounded-full text-xs bg-white/8 dark:bg-black/20 backdrop-blur-sm">
-      {children}
-    </span>
+    <span className="px-2 py-1 rounded-full text-xs bg-white/8 dark:bg-black/20 backdrop-blur-sm">{children}</span>
   );
 }
 
@@ -107,26 +191,23 @@ const sectionVariant = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
 };
 
+// ---------- Main component ----------
 export default function WorldsBestPortfolio() {
   const [isDark, setIsDark] = useState(() => {
     try {
       return localStorage.getItem("theme") === "dark";
     } catch (e) {
-      return false;
+      return true; // default dark
     }
   });
 
   useEffect(() => {
-    const root = document.documentElement;
-    if (isDark) root.classList.add("dark");
-    else root.classList.remove("dark");
-    try {
-      localStorage.setItem("theme", isDark ? "dark" : "light");
-    } catch (e) {}
+    document.documentElement.classList.toggle("dark", isDark);
+    try { localStorage.setItem("theme", isDark ? "dark" : "light"); } catch (e) {}
   }, [isDark]);
 
   return (
-    <div className={clsx("min-h-screen font-sans bg-gradient-to-b from-slate-50 to-white dark:from-[#05060a] dark:to-[#071019] text-slate-900 dark:text-slate-100 transition-colors duration-300")}>
+    <div className={clsx("min-h-screen font-sans transition-colors duration-300", isDark ? "bg-gradient-to-b from-[#05060a] to-[#071019] text-slate-100" : "bg-gradient-to-b from-[#f5f7fa] to-[#e4ebf5] text-slate-900")}>
       <header className="fixed inset-x-0 top-4 z-50 flex items-center justify-between px-6">
         <div className="flex items-center gap-4">
           <div className="rounded-lg p-2 bg-white/60 dark:bg-black/40 backdrop-blur-md">
@@ -134,16 +215,11 @@ export default function WorldsBestPortfolio() {
             <div className="text-xs opacity-70">{DATA.title}</div>
           </div>
         </div>
+
         <div className="flex items-center gap-3">
           <a href={DATA.github} target="_blank" rel="noreferrer" className="text-sm opacity-80 hover:opacity-100">GitHub</a>
           <a href={DATA.linkedin} target="_blank" rel="noreferrer" className="text-sm opacity-80 hover:opacity-100">LinkedIn</a>
-          <button
-            aria-label="Toggle theme"
-            onClick={() => setIsDark((s) => !s)}
-            className="rounded-full p-2 bg-white/8 dark:bg-black/20 backdrop-blur-md"
-          >
-            {isDark ? "🌙" : "☀️"}
-          </button>
+          <button aria-label="Toggle theme" onClick={() => setIsDark((s) => !s)} className="rounded-full p-2 bg-white/8 dark:bg-black/20 backdrop-blur-md">{isDark ? "🌙" : "☀️"}</button>
         </div>
       </header>
 
@@ -157,9 +233,7 @@ export default function WorldsBestPortfolio() {
               <p className="mt-6 text-sm leading-relaxed opacity-85">{DATA.summary}</p>
 
               <div className="mt-6 flex flex-wrap gap-3">
-                {DATA.skills.slice(0, 5).map((s) => (
-                  <Tag key={s}>{s}</Tag>
-                ))}
+                {DATA.skills.slice(0, 5).map((s) => (<Tag key={s.id}>{s.name}</Tag>))}
               </div>
 
               <div className="mt-6 flex gap-3 items-center">
@@ -172,12 +246,9 @@ export default function WorldsBestPortfolio() {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7 }}>
-            <div className="rounded-3xl overflow-hidden h-96 bg-gradient-to-br from-white to-slate-100 dark:from-[#071019] dark:to-[#06101a] shadow-2xl">
-              <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
-                <ambientLight intensity={0.6} />
-                <directionalLight position={[5, 5, 5]} intensity={0.8} />
-                <FloatingMesh />
-                <OrbitControls enableZoom={false} enablePan={false} autoRotate={true} autoRotateSpeed={0.8} />
+            <div className="rounded-3xl overflow-hidden h-96 shadow-2xl bg-gradient-to-br from-white to-slate-100 dark:from-[#071019] dark:to-[#06101a]">
+              <Canvas camera={{ position: [0, 0, 6], fov: 50 }}>
+                <SkillsScene isDark={isDark} />
               </Canvas>
             </div>
           </motion.div>
@@ -232,11 +303,11 @@ export default function WorldsBestPortfolio() {
           </motion.section>
         </div>
 
-        {/* SKILLS */}
+        {/* SKILLS - static fallback list */}
         <motion.section variants={sectionVariant} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mt-16">
           <h2 className="text-2xl font-bold">Skills</h2>
           <div className="mt-4 flex flex-wrap gap-3">
-            {DATA.skills.map((s) => (<Tag key={s}>{s}</Tag>))}
+            {DATA.skills.map((s) => (<Tag key={s.id}>{s.name}</Tag>))}
           </div>
         </motion.section>
 
