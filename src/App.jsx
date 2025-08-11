@@ -25,6 +25,12 @@ const DATA = {
    
   ],
   projects: [
+      {
+      name: "PixelMist",
+      desc:
+        "Designed and developed a full-stack tweet only text, filtering, and contacting listings with real-time responsiveness. Built with MERN, JWT auth",
+      tags: ["MERN", "Maps", "JWT", "Tailwind"]
+    },
     {
       name: "Real Estate Platform",
       desc:
